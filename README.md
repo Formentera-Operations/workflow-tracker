@@ -1,4 +1,21 @@
-# Getting Started with Create React App
+# Workflow Tracker
+
+A workflow automation tracker for identifying and managing automation opportunities across departments.
+
+## Features
+
+- 📝 Public submission form for workflow submissions
+- 🔐 Protected admin dashboard with authentication
+- 📊 Analytics and metrics for time/cost savings
+- 🗄️ Supabase backend with PostgreSQL database
+- 🔒 Row-level security for data protection
+
+## Live Application
+
+- **Submission Form:** [Submit Workflow](https://workflow-tracker-swz0e4btz-alex814345s-projects.vercel.app/submit)
+- **Admin Dashboard:** [Admin Login](https://workflow-tracker-swz0e4btz-alex814345s-projects.vercel.app/login)
+
+---
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
