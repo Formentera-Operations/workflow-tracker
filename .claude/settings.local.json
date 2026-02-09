@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/plugin marketplace add:*)",
+      "Bash(bunx @every-env/compound-plugin install compound-engineering:*)"
+    ]
+  }
+}
