@@ -11,6 +11,7 @@ const toDbFormat = (data) => ({
   programs: Array.isArray(data.programs) ? data.programs :
     (typeof data.programs === 'string' ? data.programs.split(',').map(p => p.trim()).filter(p => p) : []),
   submitted_by: data.submittedBy,
+  email: data.email || null,
   priority: data.priority,
   status: data.status || 'Pending Review',
   notes: data.notes || ''
@@ -27,6 +28,7 @@ const toComponentFormat = (data) => ({
   frequency: data.frequency,
   programs: Array.isArray(data.programs) ? data.programs : [],
   submittedBy: data.submitted_by,
+  email: data.email || '',
   priority: data.priority,
   status: data.status,
   notes: data.notes || '',

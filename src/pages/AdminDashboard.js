@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Plus, Search, Clock, Users, Package, Download, Edit2, Trash2, BarChart3, DollarSign, X, LogOut } from 'lucide-react';
 import { DEPARTMENTS, FREQUENCIES, PRIORITIES, STATUSES } from '../utils/constants';
 import { createWorkflow, updateWorkflow, deleteWorkflow } from '../services/workflowService';
 import { getHourlyRate, updateHourlyRate } from '../services/settingsService';
 import { useWorkflows } from '../hooks/useWorkflows';
 import { useAuth } from '../hooks/useAuth';
+import StatusPieChart from '../components/charts/StatusPieChart';
+import DepartmentBarChart from '../components/charts/DepartmentBarChart';
+import ProgramsBarChart from '../components/charts/ProgramsBarChart';
 
 const AdminDashboard = () => {
   const { workflows: fetchedWorkflows, loading: workflowsLoading, refetch } = useWorkflows();
@@ -66,7 +70,7 @@ const AdminDashboard = () => {
   const handleSubmit = async () => {
     if (!formData.department || !formData.processName || !formData.description ||
         !formData.currentTime || !formData.estimatedTimeAfterAutomation || !formData.submittedBy || !formData.programs) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -82,7 +86,7 @@ const AdminDashboard = () => {
       // Update existing workflow
       const { error } = await updateWorkflow(editingId, submission);
       if (error) {
-        alert('Failed to update workflow');
+        toast.error('Failed to update workflow');
         setSubmitting(false);
         return;
       }
@@ -90,13 +94,14 @@ const AdminDashboard = () => {
       // Add new workflow
       const { error } = await createWorkflow(submission);
       if (error) {
-        alert('Failed to create workflow');
+        toast.error('Failed to create workflow');
         setSubmitting(false);
         return;
       }
     }
 
     await refetch();
+    toast.success(editingId ? 'Workflow updated successfully' : 'Workflow created successfully');
     resetForm();
     setSubmitting(false);
   };
@@ -134,10 +139,11 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this workflow?')) {
       const { error } = await deleteWorkflow(id);
       if (error) {
-        alert('Failed to delete workflow');
+        toast.error('Failed to delete workflow');
         return;
       }
       await refetch();
+      toast.success('Workflow deleted');
     }
   };
 
@@ -362,70 +368,11 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Workflows by Department</h2>
-              <div className="space-y-3">
-                {stats.deptStats.map(({ dept, count }) => (
-                  <div key={dept} className="flex items-center">
-                    <div className="w-32 text-sm font-medium text-gray-700">{dept}</div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${(count / workflows.length) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">{count}</div>
-                  </div>
-                ))}
-              </div>
+              <DepartmentBarChart deptStats={stats.deptStats} />
             </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Annual Hours Saved by Department</h2>
-              <div className="space-y-3">
-                {stats.deptStats.map(({ dept, timeSaved }) => {
-                  const maxTime = Math.max(...stats.deptStats.map(d => d.timeSaved));
-                  return (
-                    <div key={dept} className="flex items-center">
-                      <div className="w-32 text-sm font-medium text-gray-700">{dept}</div>
-                      <div className="flex-1 mx-4">
-                        <div className="bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${(timeSaved / maxTime) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600">{Math.round(timeSaved / 60)}h</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Distribution</h2>
-              <div className="space-y-3">
-                {stats.statusCounts.filter(s => s.count > 0).map(({ status, count }) => (
-                  <div key={status} className="flex items-center">
-                    <div className="w-40 text-sm font-medium text-gray-700">{status}</div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            status === 'Automated' ? 'bg-green-500' :
-                            status === 'In Progress' ? 'bg-yellow-500' :
-                            status === 'Pending Review' ? 'bg-blue-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${(count / workflows.length) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">{count}</div>
-                  </div>
-                ))}
-              </div>
+              <StatusPieChart statusCounts={stats.statusCounts} />
             </div>
           </div>
         )}
@@ -434,22 +381,7 @@ const AdminDashboard = () => {
         {stats.topPrograms.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Most Used Programs</h2>
-            <div className="space-y-3">
-              {stats.topPrograms.map(([program, count]) => (
-                <div key={program} className="flex items-center">
-                  <div className="w-32 text-sm font-medium text-gray-700">{program}</div>
-                  <div className="flex-1 mx-4">
-                    <div className="bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${(count / workflows.length) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">{count} workflow{count !== 1 ? 's' : ''}</div>
-                </div>
-              ))}
-            </div>
+            <ProgramsBarChart topPrograms={stats.topPrograms} />
           </div>
         )}
 

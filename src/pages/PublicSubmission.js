@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Send, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { DEPARTMENTS, FREQUENCIES, PRIORITIES } from '../utils/constants';
 import { createWorkflow } from '../services/workflowService';
@@ -15,6 +16,7 @@ const PublicSubmission = () => {
     frequency: 'Daily',
     programs: '',
     submittedBy: '',
+    email: '',
     priority: 'Medium'
   });
 
@@ -22,8 +24,8 @@ const PublicSubmission = () => {
     e.preventDefault();
 
     if (!formData.department || !formData.processName || !formData.description ||
-        !formData.currentTime || !formData.estimatedTimeAfterAutomation || !formData.submittedBy || !formData.programs) {
-      alert('Please fill in all required fields');
+        !formData.currentTime || !formData.estimatedTimeAfterAutomation || !formData.submittedBy || !formData.email || !formData.programs) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -42,12 +44,29 @@ const PublicSubmission = () => {
 
     if (error) {
       console.error('Submission error:', error);
-      alert('Failed to submit workflow. Please try again.');
+      toast.error('Failed to submit workflow. Please try again.');
       setLoading(false);
       return;
     }
 
+    // Send email notifications (fire-and-forget)
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          name: formData.submittedBy,
+          processName: formData.processName,
+          department: formData.department,
+        }),
+      });
+    } catch (emailError) {
+      console.error('Email notification failed:', emailError);
+    }
+
     // Show success message
+    toast.success('Workflow submitted successfully!');
     setSubmitted(true);
     setLoading(false);
 
@@ -62,6 +81,7 @@ const PublicSubmission = () => {
         frequency: 'Daily',
         programs: '',
         submittedBy: '',
+        email: '',
         priority: 'Medium'
       });
       setSubmitted(false);
@@ -126,7 +146,7 @@ const PublicSubmission = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Your Name <span className="text-red-500">*</span>
@@ -136,6 +156,19 @@ const PublicSubmission = () => {
                   value={formData.submittedBy}
                   onChange={(e) => handleChange('submittedBy', e.target.value)}
                   placeholder="John Smith"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="john.smith@company.com"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   disabled={loading}
                 />
